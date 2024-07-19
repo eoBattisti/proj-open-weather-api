@@ -1,15 +1,7 @@
-from datetime import datetime
-
-from fastapi import Depends, Request
 from fastapi.applications import FastAPI
 
-from core.database import AsyncSession
-from schemas.wheater_data import WheaterData
-
+from weather.router import router as weather_router 
 
 app = FastAPI()
 
-@app.get("/")
-async def root(
-):
-    return {"message": "Hello World"}
+app.include_router(router=weather_router)
