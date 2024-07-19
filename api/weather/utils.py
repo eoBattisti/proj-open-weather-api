@@ -13,14 +13,11 @@ def kelvin_to_celsius(kelvin: int) -> float:
 async def fetch_weather(
     redis: Redis,
     session: ClientSession,
-    user_id: int,
+    ref_id: int,
     city_id: int,
     backoff: float = BACKOFF,
     max_retries: int = MAX_RETRIES,
 ) -> None:
-    """
-    TODO: Add description
-    """
     for attempt in range(max_retries):
         try:
             url = f"{OPEN_WEATHER_BASE_URL}?id={city_id}&appid={OPEN_WEATHER_API_KEY}"
@@ -31,13 +28,13 @@ async def fetch_weather(
                     response.raise_for_status()
 
                 request_data = await response.json()
-                temperature = kelvin_to_celsius(request_data["main"]["temp"])
+                temperature = kelvin_to_celsius(kelvin=request_data["main"]["temp"])
                 data = {
                     "city_id": city_id,
                     "humidity": request_data["main"]["humidity"],
                     "temperature": temperature,
                 }
-                store_weather_data(redis, user_id, city_id, data)
+                store_weather_data(redis=redis, ref_id=ref_id, city_id=city_id, data=data)
 
         except asyncio.TimeoutError:
             if attempt < max_retries - 1:
