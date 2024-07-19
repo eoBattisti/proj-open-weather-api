@@ -1,33 +1,34 @@
 services:
 
-  postgres:
-    container_name: postgres
-    image: postgres:16
-    restart: unless-stopped
-    ports:
-      - 5432:5432
-    env_file:
-      - ./envs/database.env
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-
   api:
     container_name: fastapi
     build:
       context: ./api/
       dockerfile: Dockerfile
+      args:
+        MODE: development
+    restart: unless-stopped
     env_file:
-      - ./envs/database.env
+      - ./envs/redis.env
+    command: bash ./docker/entrypoint.sh
     environment:
       MODE: development
       PORT: 8000
       HOST: 0.0.0.0
+      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
     ports:
       - 8000:8000
-    depends_on:
-      - postgres
     volumes:
-      - ./api:/root/app
+      - ./api:/app
+
+  redis:
+    image: redis
+    container_name: redis 
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
-  pg_data:
+  redis_data:
