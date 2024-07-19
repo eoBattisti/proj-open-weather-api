@@ -1,0 +1,33 @@
+services:
+
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    env_file:
+      - ./envs/database.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  api:
+    container_name: fastapi
+    build:
+      context: ./api/
+      dockerfile: Dockerfile
+    env_file:
+      - ./envs/database.env
+    environment:
+      MODE: development
+      PORT: 8000
+      HOST: 0.0.0.0
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+    volumes:
+      - ./api:/root/app
+
+volumes:
+  pg_data:
