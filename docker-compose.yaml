@@ -1,5 +1,45 @@
 services:
 
+  redis:
+    image: redis
+    container_name: redis 
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - weather-network
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.13.4
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - weather-network
+
+  consumer:
+    container_name: consumer
+    build:
+      context: ./consumer/
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - rabbitmq
+    env_file:
+      - ./envs/redis.env
+      - ./envs/rabbitmq.env
+    environment:
+      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
+    volumes:
+      - ./consumer:/usr/src/app
+    networks:
+      - weather-network
+
   api:
     container_name: fastapi
     build:
@@ -10,25 +50,26 @@ services:
     restart: unless-stopped
     env_file:
       - ./envs/redis.env
+      - ./envs/rabbitmq.env
     command: bash ./docker/entrypoint.sh
     environment:
       MODE: development
       PORT: 8000
       HOST: 0.0.0.0
       OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
+    depends_on:
+      - consumer
+      - redis
     ports:
       - 8000:8000
     volumes:
       - ./api:/app
-
-  redis:
-    image: redis
-    container_name: redis 
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    networks:
+      - weather-network
 
 volumes:
   redis_data:
+
+networks:
+  weather-network:
+    driver: bridge
