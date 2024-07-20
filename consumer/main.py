@@ -6,33 +6,34 @@ from typing import List
 
 import aiohttp
 import aio_pika
+from redis.asyncio import Redis
 
 from src.settings import (
-    BATCH_SIZE, RABBITMQ_DEFAULT_PASSWORD,
-    RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_VHOST,
-    RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_QUEUE,
+    OPEN_WEATHER_BATCH_SIZE, RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASSWORD, 
+    RABBITMQ_DEFAULT_VHOST, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_QUEUE,
     REDIS_HOST, REDIS_PORT
 )
-from redis.asyncio import Redis
-from src.utils import fetch_weather
+from src.open_weather import OpenWeatherClient
 
 
 async def process_task(message: aio_pika.IncomingMessage) -> None:
     async with message.process():
         body = json.loads(message.body)
+
         ref_id: int = body["ref_id"]
         requested_at: str = body["requested_at"]
         city_ids: List[int] = body["city_ids"]
 
         redis = Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+        open_weather_client = OpenWeatherClient()
 
         async with aiohttp.ClientSession() as session:
-            for i in range(0, len(city_ids), BATCH_SIZE):
+            for i in range(0, len(city_ids), OPEN_WEATHER_BATCH_SIZE):
                 tasks = []
 
-                for city in city_ids[i:i + BATCH_SIZE]:
+                for city in city_ids[i:i + OPEN_WEATHER_BATCH_SIZE]:
                     tasks.append(
-                        fetch_weather(
+                        open_weather_client.fetch_weather_by_city(
                             redis=redis,
                             session=session,
                             ref_id=ref_id,

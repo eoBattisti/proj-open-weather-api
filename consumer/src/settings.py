@@ -5,9 +5,10 @@ OPEN_WEATHER_API_KEY = os.environ.get("OPEN_WEATHER_API_KEY")
 OPEN_WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 # Constants
-BATCH_SIZE = 60
-MAX_RETRIES = 5
-BACKOFF = 1
+OPEN_WEATHER_TIMEOUT_SECONDS = 10 
+OPEN_WEATHER_BATCH_SIZE = 60
+OPEN_WEATHER_MAX_RETRIES = 5
+OPEN_WEATHER_BACKOFF = 1
 
 # Database Settings
 REDIS_HOST = os.environ.get("REDIS_HOST")
