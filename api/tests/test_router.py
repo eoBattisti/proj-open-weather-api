@@ -37,7 +37,6 @@ async def test_get_weather_not_found(client: TestClient):
 
     with patch("weather.router.get_redis", return_value=mock_redis):
         response = client.get(f"/weather?ref_id={ref_id}")
-        print(response.json())
         assert response.status_code == 404
         assert response.json() == {"detail": "User ref_id not found! Please try again with a valid ref_id."}
 
@@ -72,7 +71,6 @@ async def test_collect_weather_success(client: TestClient):
     with patch("weather.router.get_redis", return_value=mock_redis):
         with patch("core.rabbit.get_rabbit_connection", return_value=mock_rabbitmq):
             response = client.post(f"/weather?ref_id={ref_id}")
-            print(response.json())
             assert response.status_code == 200
             assert response.json() == {"message": "Task created", "ref_id": ref_id}
 

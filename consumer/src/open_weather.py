@@ -49,7 +49,6 @@ class OpenWeatherClient:
                         "humidity": request_data["main"]["humidity"],
                         "temperature": temperature,
                     }
-                    print(json.dumps(data))
                     await redis.hset(name=str(ref_id), key=str(city_id), value=json.dumps(data))
 
             except asyncio.TimeoutError:
