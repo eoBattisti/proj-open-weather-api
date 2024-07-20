@@ -27,6 +27,7 @@ services:
       context: ./consumer/
       dockerfile: Dockerfile
     restart: unless-stopped
+    command: bash ./docker/entrypoint.sh
     depends_on:
       - redis
       - rabbitmq

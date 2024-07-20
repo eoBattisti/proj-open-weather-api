@@ -9,10 +9,8 @@ RUN apt update
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt ./
+COPY ./requirements/main.txt ./
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r main.txt
 
 COPY . .
-
-CMD ["python", "main.py"]

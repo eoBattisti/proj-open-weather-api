@@ -21,3 +21,19 @@ services:
     volumes:
       - ./api:/app
 
+  consumer:
+    container_name: ci_consumer
+    build:
+      context: ./consumer/
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: bash ./docker/ci.sh
+    env_file:
+      - ./envs/redis.env
+      - ./envs/rabbitmq.env
+    environment:
+      open_weather_api_key: 49468092d0e4909cbeebfa1b3bdc49e6
+    volumes:
+      - ./consumer:/usr/src/app
+
+
