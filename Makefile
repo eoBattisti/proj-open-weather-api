@@ -14,4 +14,10 @@ run:
 	docker compose up
 
 test:
-	docker compose -f docker-compose.yaml -f docker-compose.ci.yaml up api --build
+	docker compose -f docker-compose.ci.yaml up
+
+test-api:
+	docker compose -f docker-compose.ci.yaml up --exit-code-from api api
+
+test-consumer:
+	docker compose -f docker-compose.ci.yaml up --exit-code-from consumer consumer

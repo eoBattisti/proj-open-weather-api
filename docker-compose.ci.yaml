@@ -15,20 +15,24 @@ services:
       MODE: ci
       PORT: 8000
       HOST: 0.0.0.0
-      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
     ports:
       - 8000:8000
     volumes:
       - ./api:/app
 
-  redis:
-    image: redis
-    container_name: redis 
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
+  consumer:
+    container_name: ci_consumer
+    build:
+      context: ./consumer/
+      dockerfile: Dockerfile
+    restart: no
+    command: bash ./docker/ci.sh
+    env_file:
+      - ./envs/redis.env
+      - ./envs/rabbitmq.env
+    environment:
+      OPEN_WEATHER_API_KEY: <YOUR_OPEN_WEATHER_API_KEY>
     volumes:
-      - redis_data:/data
+      - ./consumer:/usr/src/app
 
-volumes:
-  redis_data:
+
