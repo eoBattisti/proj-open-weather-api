@@ -16,7 +16,7 @@ from core.settings import CITY_IDS, RABBITMQ_QUEUE
 
 router = APIRouter(prefix="/weather", tags=["Weather"])
 
-@router.get("", response_class=ORJSONResponse)
+@router.get("")
 async def get_weather(
     ref_id: int,
     redis: Redis = Depends(dependency=get_redis)
@@ -33,7 +33,7 @@ async def get_weather(
         return ORJSONResponse(content={"id": ref_id, "progress": "{:.2f}%".format(progress)})
 
 
-@router.post("", response_class=ORJSONResponse)
+@router.post("")
 async def collect_weather(
     ref_id: int,
     redis: Redis = Depends(dependency=get_redis),
@@ -46,7 +46,12 @@ async def collect_weather(
         async with rabbitmq.channel() as channel:
             await channel.default_exchange.publish(
                 Message(
-                    orjson.dumps({"ref_id": ref_id, "requested_at": datetime.now().isoformat()}),
+                    orjson.dumps(
+                        {
+                         "ref_id": ref_id,
+                         "requested_at": datetime.now().isoformat()
+                        }
+                    ),
                     delivery_mode=DeliveryMode.PERSISTENT
                 ),
                 routing_key=RABBITMQ_QUEUE
