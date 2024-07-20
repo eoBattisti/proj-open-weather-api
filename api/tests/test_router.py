@@ -1,19 +1,15 @@
-import asyncio
-import orjson
 import aio_pika
 import pytest
 
-from aio_pika import DeliveryMode, Message
 from aio_pika.abc import AbstractRobustConnection
 from unittest.mock import AsyncMock, patch
 
-from aioresponses import aioresponses
 from fastapi.testclient import TestClient
 import redis
 
 from core.rabbit import get_rabbit_connection
 from core.redis import get_redis
-from core.settings import CITY_IDS, RABBITMQ_QUEUE, OPEN_WEATHER_BASE_URL, OPEN_WEATHER_API_KEY
+from core.settings import CITY_IDS
 
 
 @pytest.mark.asyncio
@@ -30,7 +26,7 @@ async def test_get_weather_success(client: TestClient):
         assert response.status_code == 200
 
 @pytest.mark.asyncio
-async def test_get_weather_not_found(client):
+async def test_get_weather_not_found(client: TestClient):
     ref_id = 2
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_redis.hexists.return_value = False
@@ -44,7 +40,7 @@ async def test_get_weather_not_found(client):
         assert response.json() == {"detail": "User ref_id not found! Please try again with a valid ref_id."}
 
 @pytest.mark.asyncio
-async def test_get_weather_with_unexpected_error(client):
+async def test_get_weather_with_unexpected_error(client: TestClient):
     ref_id = 3
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_redis.hexists.return_value = True
@@ -57,7 +53,7 @@ async def test_get_weather_with_unexpected_error(client):
             assert reponse.status_code == 500
 
 @pytest.mark.asyncio
-async def test_collect_weather_success(client):
+async def test_collect_weather_success(client: TestClient):
     ref_id = 3
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_rabbitmq = AsyncMock(spec=AbstractRobustConnection)
@@ -79,7 +75,7 @@ async def test_collect_weather_success(client):
             assert response.json() == {"message": "Task created", "ref_id": ref_id}
 
 @pytest.mark.asyncio
-async def test_collect_weather_with_unexpected_error(client):
+async def test_collect_weather_with_unexpected_error(client: TestClient):
     ref_id = 3
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_rabbitmq = AsyncMock(spec=AbstractRobustConnection)
@@ -94,7 +90,7 @@ async def test_collect_weather_with_unexpected_error(client):
                 assert response.status_code == 500
 
 @pytest.mark.asyncio
-async def test_collect_weather_already_exists(client):
+async def test_collect_weather_already_exists(client: TestClient):
     ref_id = 3
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_redis.hexists.return_value = True
