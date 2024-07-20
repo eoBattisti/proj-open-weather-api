@@ -50,6 +50,7 @@ async def main() -> None:
     connection = await aio_pika.connect_robust(f"amqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_DEFAULT_VHOST}")
     channel = await connection.channel()
     queue = await channel.declare_queue(RABBITMQ_QUEUE, durable=True)
+    print(queue, channel)
 
     await queue.consume(process_task)
 

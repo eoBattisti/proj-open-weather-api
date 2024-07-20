@@ -22,7 +22,7 @@ class OpenWeatherClient:
         self.backoff = backoff
 
     def _kelvin_to_celsius(self, kelvin: int) -> float:
-        return kelvin - 273.15
+        return round(kelvin - 273.15, 2)
 
     async def fetch_weather_by_city(
         self, 
@@ -49,6 +49,7 @@ class OpenWeatherClient:
                         "humidity": request_data["main"]["humidity"],
                         "temperature": temperature,
                     }
+                    print(json.dumps(data))
                     await redis.hset(name=str(ref_id), key=str(city_id), value=json.dumps(data))
 
             except asyncio.TimeoutError:

@@ -15,3 +15,4 @@ run:
 
 test:
 	docker compose -f docker-compose.ci.yaml up --exit-code-from api api
+	dokcer compose -f docker-compose.ci.yaml up --exit-code-from consumer consumer
