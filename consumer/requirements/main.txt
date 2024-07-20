@@ -1,5 +1,5 @@
-aio-pika
-aiohttp
-pika
-redis
+aio-pika==9.4.2
+aiohttp==3.9.5
+pika==1.3.2
+redis==5.0.1
 
