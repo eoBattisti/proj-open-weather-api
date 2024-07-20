@@ -35,7 +35,7 @@ services:
       - ./envs/redis.env
       - ./envs/rabbitmq.env
     environment:
-      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
+      OPEN_WEATHER_API_KEY: <OPEN_WEATHER_API_KEY>
     volumes:
       - ./consumer:/usr/src/app
     networks:
@@ -57,7 +57,6 @@ services:
       MODE: development
       PORT: 8000
       HOST: 0.0.0.0
-      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
     depends_on:
       - consumer
       - redis

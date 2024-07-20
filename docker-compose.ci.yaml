@@ -15,7 +15,6 @@ services:
       MODE: ci
       PORT: 8000
       HOST: 0.0.0.0
-      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
     ports:
       - 8000:8000
     volumes:
@@ -32,7 +31,7 @@ services:
       - ./envs/redis.env
       - ./envs/rabbitmq.env
     environment:
-      OPEN_WEATHER_API_KEY: 49468092d0e4909cbeebfa1b3bdc49e6
+      OPEN_WEATHER_API_KEY: <YOUR_OPEN_WEATHER_API_KEY>
     volumes:
       - ./consumer:/usr/src/app
 
