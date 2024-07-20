@@ -3,8 +3,8 @@ This project is a microservice designed to collect weather data from Open Weathe
 Docker and Docker Compose to make the environment simple, easy to use and deploy. 
 
 
-- [Prerequisites](#prerequisites)
 - [Technologies](#technologies)
+- [Prerequisites](#prerequisites)
 - [Infrastructure](#infrastructure)
 - [How to's](#how-to's)
     - [How to setup the environment](#how-to-setup-the-environment)
@@ -13,13 +13,8 @@ Docker and Docker Compose to make the environment simple, easy to use and deploy
 - [Specifications](#specifications)
     - [Containers](#containers)
     - [API Endpoints](#api-endpoints)
-        - [POST /weather](#post--weather)
-        - [GET /weather](#get--weather)
-
-## Prerequisites
-- Docker
-- Docker Compose
-- To run some scripts you will need to install the `build-essentials` package.
+        - [POST /weather](#post-weather)
+        - [GET /weather](#get-weather)
 
 ## Technologies
 - Python3
@@ -28,6 +23,11 @@ Docker and Docker Compose to make the environment simple, easy to use and deploy
 - Redis
 
 You can check the architecture of the project below to see how the techologies are used and communicate with each other.
+
+## Prerequisites
+- Docker
+- Docker Compose
+- To run some scripts you will need to install the `build-essentials` package.
 
 ## Infrastructure
 ![Architecure](./assets/architecture.png)
