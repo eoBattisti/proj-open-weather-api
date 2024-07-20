@@ -1,60 +1,111 @@
 import asyncio
+import orjson
+import aio_pika
 import pytest
 
+from aio_pika import DeliveryMode, Message
+from aio_pika.abc import AbstractRobustConnection
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
 from fastapi.testclient import TestClient
+import redis
 
-from core.settings import CITY_IDS, OPEN_WEATHER_BASE_URL, OPEN_WEATHER_API_KEY
-from weather.utils import fetch_weather
+from core.rabbit import get_rabbit_connection
+from core.redis import get_redis
+from core.settings import CITY_IDS, RABBITMQ_QUEUE, OPEN_WEATHER_BASE_URL, OPEN_WEATHER_API_KEY
 
 
 @pytest.mark.asyncio
-async def test_get_weather(get_client: TestClient) -> None:
-    ref_id = 1234
-    mock_redis = AsyncMock()
+async def test_get_weather_success(client: TestClient):
+    ref_id = 1
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_redis.hexists.return_value = True
+    mock_redis.hgetall.return_value = {str(CITY_IDS[0]): b'{"request_at": "2022-01-01T00:00:00", "city_id": 1, "temperature": 25, "humidity": 50}'}
+
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
 
     with patch("weather.router.get_redis", return_value=mock_redis):
-        response = get_client.get(f"/weather?ref_id={ref_id}")
+        response = client.get(f"/weather?ref_id={ref_id}")
         assert response.status_code == 200
-        assert response.json() == {
-            "id": ref_id,
-            "progress": "0%"
-        }
 
 @pytest.mark.asyncio
-async def test_collect_weather(get_client: TestClient) -> None:
-    ref_id = 1
-    mock_redis = AsyncMock()
-
-    async def mock_fetch_weather(redis, session, user_id, city_id):
-        return {"id": city_id, "weather": "sunny"}
-
-    with patch("core.redis.get_redis", return_value=mock_redis):
-        with patch("weather.utils.fetch_weather", side_effect=mock_fetch_weather):
-            response = get_client.post(f"/weather?ref_id={ref_id}")
-            assert response.status_code == 200
-            assert response.json() == {"message": "Completed", "ref_id": ref_id}
-
-@pytest.mark.asyncio
-async def test_fetch_weather_with_retries_success_after_timeout() -> None:
+async def test_get_weather_not_found(client):
     ref_id = 2
-    city_id = CITY_IDS[0]
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_redis.hexists.return_value = False
 
-    async def mock_get(*args, **kwargs):
-        return asyncio.TimeoutError
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
 
-    mock_session = AsyncMock()
-    mock_session.get.side_effect = mock_get
+    with patch("weather.router.get_redis", return_value=mock_redis):
+        response = client.get(f"/weather?ref_id={ref_id}")
+        print(response.json())
+        assert response.status_code == 404
+        assert response.json() == {"detail": "User ref_id not found! Please try again with a valid ref_id."}
 
-    with aioresponses() as mock:
-        mock.get(f"{OPEN_WEATHER_BASE_URL}?id={city_id}&appid={OPEN_WEATHER_API_KEY}", exception=asyncio.TimeoutError)
+@pytest.mark.asyncio
+async def test_get_weather_with_unexpected_error(client):
+    ref_id = 3
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_redis.hexists.return_value = True
 
-        with pytest.raises(asyncio.TimeoutError):
-            await fetch_weather(
-                redis=AsyncMock(),
-                session=mock_session,
-                user_id=ref_id,
-                city_id=city_id
-            )
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
+
+    with patch("weather.router.get_redis", return_value=mock_redis):
+        with pytest.raises(Exception):
+            reponse = client.get(f"/weather?ref_id={ref_id}")
+            assert reponse.status_code == 500
+
+@pytest.mark.asyncio
+async def test_collect_weather_success(client):
+    ref_id = 3
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_rabbitmq = AsyncMock(spec=AbstractRobustConnection)
+    mock_channel = AsyncMock(spec=aio_pika.abc.AbstractChannel)
+    mock_default_exchange = AsyncMock(spec=aio_pika.abc.AbstractExchange)
+
+    mock_channel.default_exchange = mock_default_exchange
+    mock_rabbitmq.channel.return_value.__aenter__.return_value = mock_channel
+    mock_redis.hexists.return_value = False
+
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
+    client.app.dependency_overrides[get_rabbit_connection] = lambda: mock_rabbitmq
+
+    with patch("weather.router.get_redis", return_value=mock_redis):
+        with patch("core.rabbit.get_rabbit_connection", return_value=mock_rabbitmq):
+            response = client.post(f"/weather?ref_id={ref_id}")
+            print(response.json())
+            assert response.status_code == 200
+            assert response.json() == {"message": "Task created", "ref_id": ref_id}
+
+@pytest.mark.asyncio
+async def test_collect_weather_with_unexpected_error(client):
+    ref_id = 3
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_rabbitmq = AsyncMock(spec=AbstractRobustConnection)
+
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
+    client.app.dependency_overrides[get_rabbit_connection] = lambda: mock_rabbitmq
+
+    with patch("weather.router.get_redis", return_value=mock_redis):
+        with patch("core.rabbit.get_rabbit_connection", return_value=mock_rabbitmq):
+            with pytest.raises(Exception):
+                response = client.post(f"/weather?ref_id={ref_id}")
+                assert response.status_code == 500
+
+@pytest.mark.asyncio
+async def test_collect_weather_already_exists(client):
+    ref_id = 3
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_redis.hexists.return_value = True
+    mock_rabbitmq = AsyncMock(spec=AbstractRobustConnection)
+
+    client.app.dependency_overrides[get_redis] = lambda: mock_redis
+    client.app.dependency_overrides[get_rabbit_connection] = lambda: mock_rabbitmq
+
+    with patch("weather.router.get_redis", return_value=mock_redis):
+        with patch("core.rabbit.get_rabbit_connection", return_value=mock_rabbitmq):
+            response = client.post(f"/weather?ref_id={ref_id}")
+            assert response.status_code == 400
+            assert response.json() == {"detail": "User ref_id already exists. Please try again with a new ref_id."}
+

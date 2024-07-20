@@ -3,6 +3,7 @@ from fastapi.responses import ORJSONResponse
 
 from weather.router import router as weather_router 
 
+
 app = FastAPI(
     title="OpenWeather microservice",
     version="0.1.0",
