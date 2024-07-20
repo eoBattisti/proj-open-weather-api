@@ -17,7 +17,9 @@ async def test_get_weather_success(client: TestClient):
     ref_id = 1
     mock_redis = AsyncMock(spec=redis.Redis)
     mock_redis.hexists.return_value = True
-    mock_redis.hgetall.return_value = {str(CITY_IDS[0]): b'{"request_at": "2022-01-01T00:00:00", "city_id": 1, "temperature": 25, "humidity": 50}'}
+    mock_redis.hgetall.return_value = {
+        str(CITY_IDS[0]): b'{"request_at": "2022-01-01T00:00:00", "city_id": 1, "temperature": 25, "humidity": 50}'
+    }
 
     client.app.dependency_overrides[get_redis] = lambda: mock_redis
 

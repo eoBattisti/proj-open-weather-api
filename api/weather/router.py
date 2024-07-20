@@ -49,7 +49,8 @@ async def collect_weather(
                     orjson.dumps(
                         {
                          "ref_id": ref_id,
-                         "requested_at": datetime.now().isoformat()
+                         "requested_at": datetime.now().isoformat(),
+                         "city_ids": CITY_IDS
                         }
                     ),
                     delivery_mode=DeliveryMode.PERSISTENT
