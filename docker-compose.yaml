@@ -18,6 +18,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    depends_on:
+      - redis
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:15672"]
+        timeout: 5s 
+        retries: 3
     networks:
       - weather-network
 
@@ -29,13 +35,13 @@ services:
     restart: unless-stopped
     command: bash ./docker/entrypoint.sh
     depends_on:
-      - redis
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - ./envs/redis.env
       - ./envs/rabbitmq.env
     environment:
-      OPEN_WEATHER_API_KEY: <OPEN_WEATHER_API_KEY>
+      OPEN_WEATHER_API_KEY: <YOUR_OPEN_WEATHER_API_KEY>
     volumes:
       - ./consumer:/usr/src/app
     networks:
